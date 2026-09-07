@@ -1,0 +1,142 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1788794852599,
+  "projectRoot": "/Users/dohyun/Desktop/nl2sql-gate/frontend",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "vue",
+        "version": "3.5.41",
+        "category": "frontend"
+      },
+      {
+        "name": "vite",
+        "version": "8.2.2",
+        "category": "build"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "vite",
+      "build": "vue-tsc -b && vite build",
+      "preview": "vite preview"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": "ES modules",
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "public",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 2,
+      "lastAccessed": 1788794852586,
+      "keyFiles": [
+        "favicon.svg",
+        "icons.svg"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 3,
+      "lastAccessed": 1788794852586,
+      "keyFiles": [
+        "App.vue",
+        "main.ts",
+        "style.css"
+      ]
+    },
+    "src/assets": {
+      "path": "src/assets",
+      "purpose": "Static assets",
+      "fileCount": 3,
+      "lastAccessed": 1788794852590,
+      "keyFiles": [
+        "hero.png",
+        "vite.svg",
+        "vue.svg"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 1,
+      "lastAccessed": 1788794852590,
+      "keyFiles": [
+        "HelloWorld.vue"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/App.vue",
+      "accessCount": 2,
+      "lastAccessed": 1788794937701,
+      "type": "file"
+    },
+    {
+      "path": "src/style.css",
+      "accessCount": 1,
+      "lastAccessed": 1788794919727,
+      "type": "file"
+    },
+    {
+      "path": "src/main.ts",
+      "accessCount": 1,
+      "lastAccessed": 1788794920116,
+      "type": "file"
+    },
+    {
+      "path": "src/components/HelloWorld.vue",
+      "accessCount": 1,
+      "lastAccessed": 1788794920524,
+      "type": "file"
+    },
+    {
+      "path": "index.html",
+      "accessCount": 1,
+      "lastAccessed": 1788794934101,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
