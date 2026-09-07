@@ -1,7 +1,23 @@
+### Node / Frontend ###
+node_modules
+dist
+dist-ssr
+.omc
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+### Gradle / Spring Boot ###
 HELP.md
 .gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -29,15 +45,21 @@ out/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 
 ### VS Code ###
-.vscode/
+**/.vscode/*
+!**/.vscode/extensions.json
 
+### OS / Editor ###
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-
-### env ###
+### Env ###
 .env
 *.local
