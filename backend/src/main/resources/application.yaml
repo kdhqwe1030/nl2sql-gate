@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: gate
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/nl2sql
+#    username: app
+#    password: app
+#    driver-class-name: org.postgresql.Driver
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.0
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+
+logging:
+  level:
+    com.nl2sql.gate: DEBUG
