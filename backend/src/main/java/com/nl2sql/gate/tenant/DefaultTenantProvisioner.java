@@ -1,5 +1,6 @@
 package com.nl2sql.gate.tenant;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,7 +19,7 @@ public class DefaultTenantProvisioner implements ApplicationRunner {
     private final JdbcTemplate jdbcTemplate;
     private volatile UUID defaultTenantId;
 
-    public DefaultTenantProvisioner(JdbcTemplate jdbcTemplate) {
+    public DefaultTenantProvisioner(@Qualifier("jdbcTemplate") JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
