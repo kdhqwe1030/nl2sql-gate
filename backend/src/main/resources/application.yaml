@@ -28,6 +28,13 @@ jwt:
   secret-key: ${JWT_SECRET_KEY}
   expiration-ms: 3600000
 
+execution:
+  datasource-url: jdbc:postgresql://localhost:5444/nl2sql
+  datasource-username: llm_reader
+  datasource-password: ${LLM_READER_DB_PASSWORD}
+  query-timeout-seconds: 10
+  max-rows: 5000
+
 server:
   port: 8080
 
