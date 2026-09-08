@@ -3,7 +3,7 @@ spring:
     name: gate
 
   datasource:
-    url: JDBC:postgresql://localhost:5444/nl2sql
+    url: jdbc:postgresql://localhost:5444/nl2sql
     username: app
     password: app
     driver-class-name: org.postgresql.Driver
@@ -23,6 +23,10 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.0
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  expiration-ms: 3600000
 
 server:
   port: 8080
