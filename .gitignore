@@ -63,3 +63,10 @@ out/
 ### Env ###
 .env
 *.local
+
+
+
+### Docs ###
+*.md
+!README.md
+docs/*
