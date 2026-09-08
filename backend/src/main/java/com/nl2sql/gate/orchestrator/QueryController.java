@@ -27,7 +27,7 @@ public class QueryController {
 
     @PostMapping
     @Operation(summary = "자연어 질문 처리", security = @SecurityRequirement(name = "bearerAuth"))
-    public OrchestratorResult query(@RequestBody QueryRequest request, Authentication authentication) {
+    public QueryApiResponse query(@RequestBody QueryRequest request, Authentication authentication) {
         Claims claims = (Claims) authentication.getDetails();
         UUID userId = UUID.fromString(authentication.getName());
         UUID tenantId = UUID.fromString(claims.get("tenantId", String.class));

@@ -1,5 +1,6 @@
 package com.nl2sql.gate.user;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -26,7 +27,7 @@ public class AppUserRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public AppUserRepository(JdbcTemplate jdbcTemplate) {
+    public AppUserRepository(@Qualifier("jdbcTemplate") JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 

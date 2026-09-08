@@ -48,7 +48,7 @@ public class QueryOrchestrator {
         this.model = model;
     }
 
-    public OrchestratorResult handle(UUID tenantId, UUID userId, Role role, String question) {
+    public QueryApiResponse handle(UUID tenantId, UUID userId, Role role, String question) {
         Set<String> allowedTables = DemoRolePolicy.allowedTables(role);
         Set<String> allowedColumns = DemoRolePolicy.allowedColumns(role);
 
@@ -59,7 +59,7 @@ public class QueryOrchestrator {
 
         if (draft.needsClarification()) {
             audit(tenantId, userId, role, question, QueryStatus.CLARIFY, draft.sql(), null, null, null, 0, false);
-            return OrchestratorResult.clarify(draft.clarify());
+            return ClarifyResponse.of(draft.clarify());
         }
 
         int attempt = 0;
@@ -74,7 +74,7 @@ public class QueryOrchestrator {
             if (!retryable || attempt >= MAX_RETRIES) {
                 QueryStatus status = toFinalStatus(gateResult.failureType());
                 audit(tenantId, userId, role, question, status, draft.sql(), null, gateResult.detail(), null, attempt, false);
-                return OrchestratorResult.failure(status, gateResult.detail());
+                return ErrorResponse.of(status, gateResult.detail());
             }
 
             attempt++;
@@ -85,7 +85,7 @@ public class QueryOrchestrator {
             draft = withClarifyFallback(draft);
             if (draft.needsClarification()) {
                 audit(tenantId, userId, role, question, QueryStatus.CLARIFY, draft.sql(), null, null, null, attempt, false);
-                return OrchestratorResult.clarify(draft.clarify());
+                return ClarifyResponse.of(draft.clarify());
             }
         }
     }
@@ -115,7 +115,7 @@ public class QueryOrchestrator {
         };
     }
 
-    private OrchestratorResult execute(
+    private QueryApiResponse execute(
         UUID tenantId, UUID userId, Role role, String question,
         SqlDraft draft, GateResult gateResult, int attempt
     ) {
@@ -123,11 +123,11 @@ public class QueryOrchestrator {
             QueryResult queryResult = queryExecutor.execute(gateResult.sql(), draft.params());
             audit(tenantId, userId, role, question, QueryStatus.SUCCESS,
                 draft.sql(), gateResult.sql(), null, queryResult, attempt, queryResult.truncated());
-            return OrchestratorResult.success(queryResult, gateResult.sql());
+            return QueryResultResponse.of(queryResult);
         } catch (DataAccessException e) {
             audit(tenantId, userId, role, question, QueryStatus.ERROR,
                 draft.sql(), gateResult.sql(), e.getMostSpecificCause().getMessage(), null, attempt, false);
-            return OrchestratorResult.failure(QueryStatus.ERROR, "쿼리 실행 중 오류가 발생했습니다");
+            return ErrorResponse.of(QueryStatus.ERROR, "쿼리 실행 중 오류가 발생했습니다");
         }
     }
 
