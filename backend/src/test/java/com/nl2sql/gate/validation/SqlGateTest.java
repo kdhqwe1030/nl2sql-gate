@@ -95,6 +95,12 @@ class SqlGateTest {
     }
 
     @Test
+    void 빈_SQL은_예외_없이_SYNTAX로_처리된다() {
+        assertThat(validate("").failureType()).isEqualTo(FailureType.SYNTAX);
+        assertThat(validate("   ").failureType()).isEqualTo(FailureType.SYNTAX);
+    }
+
+    @Test
     void SELECT_INTO는_차단() {
         GateResult result = validate("SELECT id INTO new_table FROM dept");
         assertThat(result.ok()).isFalse();
@@ -120,6 +126,16 @@ class SqlGateTest {
     void 정상_조인_쿼리는_통과() {
         GateResult result = validate(
             "SELECT r.name, SUM(o.amt) FROM ord o JOIN region r ON r.id = o.region_id GROUP BY r.name"
+        );
+        assertThat(result.ok()).isTrue();
+    }
+
+    @Test
+    void ORDER_BY의_SELECT_별칭은_실컬럼으로_오인하지_않는다() {
+        GateResult result = validate(
+            "SELECT r.name, SUM(o.amt) AS revenue " +
+                "FROM ord o JOIN region r ON r.id = o.region_id " +
+                "GROUP BY r.name ORDER BY revenue DESC"
         );
         assertThat(result.ok()).isTrue();
     }

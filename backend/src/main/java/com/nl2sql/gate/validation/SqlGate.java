@@ -61,11 +61,20 @@ public class SqlGate {
         Set<String> tables = normalize(allowedTables);
         Set<String> columns = normalize(allowedColumns);
 
+        if (sql == null || sql.isBlank()) {
+            return GateResult.fail(FailureType.SYNTAX, "빈 SQL입니다");
+        }
+
         Statements statements;
         try {
             statements = CCJSqlParserUtil.parseStatements(sql);
         } catch (JSQLParserException e) {
             return GateResult.fail(FailureType.SYNTAX, "SQL을 해석할 수 없습니다: " + e.getMessage());
+        }
+
+        // JSqlParser는 파싱할 문장이 없을 때 예외 대신 null을 돌려주기도 한다 (라이브러리 특이 동작).
+        if (statements == null || statements.isEmpty()) {
+            return GateResult.fail(FailureType.SYNTAX, "SQL을 해석할 수 없습니다");
         }
 
         if (statements.size() != 1) {
@@ -216,6 +225,7 @@ public class SqlGate {
         Set<String> realTablesInScope = aliasToTable.values().stream()
             .filter(t -> !cteNames.contains(t))
             .collect(Collectors.toCollection(HashSet::new));
+        Set<String> selectAliases = collectSelectAliases(plainSelect);
 
         for (SelectItem<?> item : plainSelect.getSelectItems()) {
             Expression expr = item.getExpression();
@@ -232,25 +242,25 @@ public class SqlGate {
                         "SELECT * 는 허용되지 않습니다 (컬럼을 명시하세요)");
                 }
             } else {
-                GateResult r = checkExpressionColumns(expr, aliasToTable, cteNames, realTablesInScope, allowedColumns);
+                GateResult r = checkExpressionColumns(expr, aliasToTable, cteNames, realTablesInScope, allowedColumns, selectAliases);
                 if (r != null) {
                     return r;
                 }
             }
         }
 
-        GateResult r = checkExpressionColumns(plainSelect.getWhere(), aliasToTable, cteNames, realTablesInScope, allowedColumns);
+        GateResult r = checkExpressionColumns(plainSelect.getWhere(), aliasToTable, cteNames, realTablesInScope, allowedColumns, selectAliases);
         if (r != null) {
             return r;
         }
-        r = checkExpressionColumns(plainSelect.getHaving(), aliasToTable, cteNames, realTablesInScope, allowedColumns);
+        r = checkExpressionColumns(plainSelect.getHaving(), aliasToTable, cteNames, realTablesInScope, allowedColumns, selectAliases);
         if (r != null) {
             return r;
         }
         GroupByElement groupBy = plainSelect.getGroupBy();
         if (groupBy != null && groupBy.getGroupByExpressions() != null) {
             for (Object e : groupBy.getGroupByExpressions()) {
-                r = checkExpressionColumns((Expression) e, aliasToTable, cteNames, realTablesInScope, allowedColumns);
+                r = checkExpressionColumns((Expression) e, aliasToTable, cteNames, realTablesInScope, allowedColumns, selectAliases);
                 if (r != null) {
                     return r;
                 }
@@ -258,7 +268,7 @@ public class SqlGate {
         }
         if (plainSelect.getOrderByElements() != null) {
             for (OrderByElement ob : plainSelect.getOrderByElements()) {
-                r = checkExpressionColumns(ob.getExpression(), aliasToTable, cteNames, realTablesInScope, allowedColumns);
+                r = checkExpressionColumns(ob.getExpression(), aliasToTable, cteNames, realTablesInScope, allowedColumns, selectAliases);
                 if (r != null) {
                     return r;
                 }
@@ -266,7 +276,7 @@ public class SqlGate {
         }
         if (plainSelect.getJoins() != null) {
             for (Join join : plainSelect.getJoins()) {
-                r = checkExpressionColumns(join.getOnExpression(), aliasToTable, cteNames, realTablesInScope, allowedColumns);
+                r = checkExpressionColumns(join.getOnExpression(), aliasToTable, cteNames, realTablesInScope, allowedColumns, selectAliases);
                 if (r != null) {
                     return r;
                 }
@@ -280,12 +290,13 @@ public class SqlGate {
         Map<String, String> aliasToTable,
         Set<String> cteNames,
         Set<String> realTablesInScope,
-        Set<String> allowedColumns
+        Set<String> allowedColumns,
+        Set<String> selectAliases
     ) {
         List<Column> columns = new ArrayList<>();
         collect(expr, columns, null);
         for (Column column : columns) {
-            GateResult r = validateColumn(column, aliasToTable, cteNames, realTablesInScope, allowedColumns);
+            GateResult r = validateColumn(column, aliasToTable, cteNames, realTablesInScope, allowedColumns, selectAliases);
             if (r != null) {
                 return r;
             }
@@ -293,14 +304,30 @@ public class SqlGate {
         return null;
     }
 
+    private Set<String> collectSelectAliases(PlainSelect plainSelect) {
+        Set<String> aliases = new HashSet<>();
+        for (SelectItem<?> item : plainSelect.getSelectItems()) {
+            if (item.getAlias() != null && item.getAlias().getName() != null) {
+                aliases.add(normalizeIdentifier(item.getAlias().getName()));
+            }
+        }
+        return aliases;
+    }
+
     private GateResult validateColumn(
         Column column,
         Map<String, String> aliasToTable,
         Set<String> cteNames,
         Set<String> realTablesInScope,
-        Set<String> allowedColumns
+        Set<String> allowedColumns,
+        Set<String> selectAliases
     ) {
         String columnName = normalizeIdentifier(column.getColumnName());
+
+        if (column.getTable() == null && selectAliases.contains(columnName)) {
+            return null;
+        }
+
         String resolvedTable;
 
         Table qualifier = column.getTable();
