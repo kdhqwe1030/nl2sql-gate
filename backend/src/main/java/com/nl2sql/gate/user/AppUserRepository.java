@@ -58,4 +58,20 @@ public class AppUserRepository {
         );
         return findById(id).orElseThrow();
     }
+
+    public List<AppUser> findAllByTenant(UUID tenantId) {
+        return jdbcTemplate.query(
+            "SELECT * FROM app_user WHERE tenant_id = ? ORDER BY created_at", ROW_MAPPER, tenantId);
+    }
+
+    public void updateActive(UUID tenantId, UUID id, boolean active) {
+        jdbcTemplate.update(
+            "UPDATE app_user SET active = ? WHERE id = ? AND tenant_id = ?", active, id, tenantId);
+    }
+
+    public void updateRole(UUID tenantId, UUID id, Role role) {
+        jdbcTemplate.update(
+            "UPDATE app_user SET role = ?::user_role, role_level = ? WHERE id = ? AND tenant_id = ?",
+            role.name(), role.level(), id, tenantId);
+    }
 }
