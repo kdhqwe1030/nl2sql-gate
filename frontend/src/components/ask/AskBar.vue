@@ -3,14 +3,17 @@ import { ref } from 'vue'
 
 const emit = defineEmits<{ ask: [question: string] }>()
 
-// 실제 데모 스키마(dept/emp_public/ord/region)와 DemoGlossary 용어에 맞춘 예시.
+// docs/llm-테스트-질문-20개.md 기준으로 role 상관없이 안정적으로 성공하는 질문만 골랐다.
+// 지역별 매출/작년 매출/부서별 평균 연봉 등은 프롬프트 회귀(관계없음 경고 과일반화)로
+// CLARIFY가 나오는 걸 확인해서 뺐다 — 백엔드(PromptBuilder) 고친 뒤에 다시 넣는다.
 const SUGGESTIONS = [
   '부서별 인원수 알려줘',
-  '지역별 매출 알려줘',
-  '부서별 평균 연봉은?',
-  '작년 매출 얼마야?',
+  '재직 중인 직원은 몇 명이야?',
+  '최근 30일 주문 총액은?',
+  '이번달 주문 몇 건이야?',
+  '서울 지역 주문 건수는?',
+  '가장 매출이 높은 지역은 어디야?',
   '무슨 데이터 볼 수 있어?',
-  '주문 테이블 삭제해줘',
 ]
 
 const question = ref('')
