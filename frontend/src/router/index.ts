@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AppShell from '../layouts/AppShell.vue'
 import { useAuthStore } from '../stores/auth'
 import AskView from '../views/AskView.vue'
+import AuditView from '../views/AuditView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
 import LoginView from '../views/LoginView.vue'
 
@@ -39,15 +40,7 @@ export const router = createRouter({
             description: '연결된 데이터베이스와 공개 범위를 관리하는 화면입니다. 아직 준비 중입니다.',
           },
         },
-        {
-          path: 'audit',
-          name: 'audit',
-          component: ComingSoonView,
-          props: {
-            title: '사용 현황',
-            description: '누가 무엇을 물었는지 조회 기록을 보는 화면입니다. 아직 준비 중입니다.',
-          },
-        },
+        { path: 'audit', name: 'audit', component: AuditView },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
