@@ -39,4 +39,20 @@ final class DemoRolePolicy {
         columns.addAll(MANAGER_ONLY_COLUMNS);
         return columns;
     }
+
+    /** 관리자용 "데이터 연결" 화면이 role 무관하게 전체 카탈로그를 보여줄 때 쓴다. */
+    static Set<String> allTables() {
+        return TABLES;
+    }
+
+    /** column은 "table.column" 형식. 전체 컬럼(제외된 컬럼 없이) 목록. */
+    static Set<String> allColumns() {
+        Set<String> columns = new HashSet<>(BASE_COLUMNS);
+        columns.addAll(MANAGER_ONLY_COLUMNS);
+        return columns;
+    }
+
+    static int minRoleLevelOf(String column) {
+        return MANAGER_ONLY_COLUMNS.contains(column) ? Role.MANAGER.level() : Role.STAFF.level();
+    }
 }
