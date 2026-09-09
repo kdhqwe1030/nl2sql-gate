@@ -86,6 +86,26 @@ function handleLogout() {
           </svg>
           <span>사용 현황</span>
         </RouterLink>
+
+        <RouterLink
+          v-if="(auth.user?.roleLevel ?? 0) >= 50"
+          to="/users"
+          class="rail-btn"
+          active-class="on"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+          >
+            <circle cx="8" cy="5.5" r="2.5" />
+            <path d="M3 13.5c0-2.5 2.2-4 5-4s5 1.5 5 4" />
+          </svg>
+          <span>구성원 관리</span>
+        </RouterLink>
       </nav>
 
       <main class="content">

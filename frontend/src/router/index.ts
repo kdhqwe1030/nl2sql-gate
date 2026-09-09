@@ -6,10 +6,12 @@ import AuditView from '../views/AuditView.vue'
 import DataView from '../views/DataView.vue'
 import LoginView from '../views/LoginView.vue'
 import TermsView from '../views/TermsView.vue'
+import UsersView from '../views/UsersView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
     public?: boolean
+    minRoleLevel?: number
   }
 }
 
@@ -26,6 +28,7 @@ export const router = createRouter({
         { path: 'terms', name: 'terms', component: TermsView },
         { path: 'data', name: 'data', component: DataView },
         { path: 'audit', name: 'audit', component: AuditView },
+        { path: 'users', name: 'users', component: UsersView, meta: { minRoleLevel: 50 } },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -38,6 +41,9 @@ router.beforeEach((to) => {
     return { name: 'login' }
   }
   if (to.name === 'login' && auth.isAuthenticated) {
+    return { name: 'ask' }
+  }
+  if (to.meta.minRoleLevel !== undefined && (auth.user?.roleLevel ?? 0) < to.meta.minRoleLevel) {
     return { name: 'ask' }
   }
 })
