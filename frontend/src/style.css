@@ -153,3 +153,129 @@ input {
   font-size: 13px;
   margin: 8px 0 0;
 }
+
+/* =========================================
+   질문하기 — 칩 / 카드 / 표 / 로딩
+   ========================================= */
+:root {
+  /* CLARIFY(되묻기)만 성공/실패 어느 쪽도 아니라 셋과 구별되는 색이 필요해서 추가 */
+  --color-warning: #8a6a0f;
+  --color-warning-soft: color-mix(in srgb, var(--color-warning) 12%, white);
+}
+
+.chip {
+  border-radius: 4px;
+  padding: 3px 9px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.chip-success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.chip-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+.chip-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+.chip-muted {
+  border: 1px solid var(--color-border);
+  color: var(--text-2);
+  background: var(--color-surface);
+}
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: currentColor;
+  display: inline-block;
+}
+
+.card {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 18px 20px;
+  max-width: 620px;
+}
+.card h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.card p {
+  margin: 0;
+  color: var(--text-2);
+}
+.card-warning {
+  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-warning) 6%, white);
+}
+.card-danger {
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 6%, white);
+}
+
+.table-wrap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.table-scroll {
+  overflow-x: auto;
+  max-height: 430px;
+  overflow-y: auto;
+}
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.data-table th,
+table.data-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+table.data-table th {
+  background: var(--color-sunk);
+  color: var(--text-2);
+  font-weight: 600;
+  font-size: 12.5px;
+  position: sticky;
+  top: 0;
+}
+table.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+table.data-table tbody tr:hover td {
+  background: var(--color-sunk);
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-main);
+  border-radius: 99px;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
