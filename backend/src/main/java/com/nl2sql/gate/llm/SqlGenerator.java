@@ -28,9 +28,9 @@ public class SqlGenerator {
         Set<String> allowedTables,
         Set<String> allowedColumns,
         Map<String, String> glossary,
-        List<String> relationships
+        Map<String, String> foreignKeys
     ) {
-        String prompt = promptBuilder.build(question, allowedTables, allowedColumns, glossary, relationships);
+        String prompt = promptBuilder.build(question, allowedTables, allowedColumns, glossary, foreignKeys);
         return callAndConvert(prompt);
     }
 
@@ -40,10 +40,10 @@ public class SqlGenerator {
         Set<String> allowedTables,
         Set<String> allowedColumns,
         Map<String, String> glossary,
-        List<String> relationships,
+        Map<String, String> foreignKeys,
         String failureFeedback
     ) {
-        String prompt = promptBuilder.build(question, allowedTables, allowedColumns, glossary, relationships)
+        String prompt = promptBuilder.build(question, allowedTables, allowedColumns, glossary, foreignKeys)
             + "\n## 이전 시도가 거부된 이유\n" + failureFeedback
             + "\n위 문제를 피해서 다시 만드세요.\n";
         return callAndConvert(prompt);

@@ -2,6 +2,7 @@ package com.nl2sql.gate.orchestrator;
 
 import com.nl2sql.gate.execution.QueryExecutor;
 import com.nl2sql.gate.execution.QueryResult;
+import com.nl2sql.gate.glossary.GlossaryRepository;
 import com.nl2sql.gate.llm.SqlDraft;
 import com.nl2sql.gate.llm.SqlGenerator;
 import com.nl2sql.gate.user.Role;
@@ -14,6 +15,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,6 +33,7 @@ public class QueryOrchestrator {
     private final SqlGenerator sqlGenerator;
     private final SqlGate sqlGate;
     private final QueryExecutor queryExecutor;
+    private final GlossaryRepository glossaryRepository;
     private final JdbcTemplate jdbcTemplate;
     private final String model;
 
@@ -38,27 +41,31 @@ public class QueryOrchestrator {
         SqlGenerator sqlGenerator,
         SqlGate sqlGate,
         QueryExecutor queryExecutor,
+        GlossaryRepository glossaryRepository,
         @Qualifier("jdbcTemplate") JdbcTemplate jdbcTemplate,
         @Value("${spring.ai.openai.chat.options.model}") String model
     ) {
         this.sqlGenerator = sqlGenerator;
         this.sqlGate = sqlGate;
         this.queryExecutor = queryExecutor;
+        this.glossaryRepository = glossaryRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.model = model;
     }
 
     public QueryApiResponse handle(UUID tenantId, UUID userId, Role role, String question) {
+        long startNanos = System.nanoTime();
         Set<String> allowedTables = DemoRolePolicy.allowedTables(role);
         Set<String> allowedColumns = DemoRolePolicy.allowedColumns(role);
+        Map<String, String> glossary = glossaryRepository.promptTerms(tenantId, role.level());
 
         SqlDraft draft = sqlGenerator.generate(
-            question, allowedTables, allowedColumns, DemoGlossary.TERMS, DemoSchemaRelationships.RELATIONSHIPS
+            question, allowedTables, allowedColumns, glossary, DemoSchemaRelationships.FOREIGN_KEYS
         );
         draft = withClarifyFallback(draft);
 
         if (draft.needsClarification()) {
-            audit(tenantId, userId, role, question, QueryStatus.CLARIFY, draft.sql(), null, null, null, 0, false);
+            audit(tenantId, userId, role, question, QueryStatus.CLARIFY, draft.sql(), null, null, null, 0, false, startNanos);
             return ClarifyResponse.of(draft.clarify());
         }
 
@@ -67,24 +74,24 @@ public class QueryOrchestrator {
             GateResult gateResult = sqlGate.validate(draft.sql(), allowedTables, allowedColumns);
 
             if (gateResult.ok()) {
-                return execute(tenantId, userId, role, question, draft, gateResult, attempt);
+                return execute(tenantId, userId, role, question, draft, gateResult, attempt, startNanos);
             }
 
             boolean retryable = isRetryable(gateResult.failureType());
             if (!retryable || attempt >= MAX_RETRIES) {
                 QueryStatus status = toFinalStatus(gateResult.failureType());
-                audit(tenantId, userId, role, question, status, draft.sql(), null, gateResult.detail(), null, attempt, false);
+                audit(tenantId, userId, role, question, status, draft.sql(), null, gateResult.detail(), null, attempt, false, startNanos);
                 return ErrorResponse.of(status, gateResult.detail());
             }
 
             attempt++;
             draft = sqlGenerator.regenerate(
-                question, allowedTables, allowedColumns, DemoGlossary.TERMS,
-                DemoSchemaRelationships.RELATIONSHIPS, gateResult.detail()
+                question, allowedTables, allowedColumns, glossary,
+                DemoSchemaRelationships.FOREIGN_KEYS, gateResult.detail()
             );
             draft = withClarifyFallback(draft);
             if (draft.needsClarification()) {
-                audit(tenantId, userId, role, question, QueryStatus.CLARIFY, draft.sql(), null, null, null, attempt, false);
+                audit(tenantId, userId, role, question, QueryStatus.CLARIFY, draft.sql(), null, null, null, attempt, false, startNanos);
                 return ClarifyResponse.of(draft.clarify());
             }
         }
@@ -117,16 +124,16 @@ public class QueryOrchestrator {
 
     private QueryApiResponse execute(
         UUID tenantId, UUID userId, Role role, String question,
-        SqlDraft draft, GateResult gateResult, int attempt
+        SqlDraft draft, GateResult gateResult, int attempt, long startNanos
     ) {
         try {
             QueryResult queryResult = queryExecutor.execute(gateResult.sql(), draft.params());
             audit(tenantId, userId, role, question, QueryStatus.SUCCESS,
-                draft.sql(), gateResult.sql(), null, queryResult, attempt, queryResult.truncated());
+                draft.sql(), gateResult.sql(), null, queryResult, attempt, queryResult.truncated(), startNanos);
             return QueryResultResponse.of(queryResult);
         } catch (DataAccessException e) {
             audit(tenantId, userId, role, question, QueryStatus.ERROR,
-                draft.sql(), gateResult.sql(), e.getMostSpecificCause().getMessage(), null, attempt, false);
+                draft.sql(), gateResult.sql(), e.getMostSpecificCause().getMessage(), null, attempt, false, startNanos);
             return ErrorResponse.of(QueryStatus.ERROR, "쿼리 실행 중 오류가 발생했습니다");
         }
     }
@@ -134,17 +141,18 @@ public class QueryOrchestrator {
     private void audit(
         UUID tenantId, UUID userId, Role role, String question, QueryStatus status,
         String generatedSql, String executedSql, String deniedDetail,
-        QueryResult queryResult, int retryCount, boolean truncated
+        QueryResult queryResult, int retryCount, boolean truncated, long startNanos
     ) {
         String detail = deniedDetail == null ? null : deniedDetail.substring(0, Math.min(200, deniedDetail.length()));
         Integer rowCount = queryResult == null ? null : queryResult.totalCount();
+        int latencyMs = (int) ((System.nanoTime() - startNanos) / 1_000_000);
         jdbcTemplate.update(
             "INSERT INTO query_log (" +
                 "id, tenant_id, user_id, question, status, generated_sql, executed_sql, " +
-                "denied_detail, row_count, truncated, retry_count, model, user_role_at_time" +
-                ") VALUES (?, ?, ?, ?, ?::query_status, ?, ?, ?, ?, ?, ?, ?, ?::user_role)",
+                "denied_detail, row_count, truncated, retry_count, model, user_role_at_time, latency_ms" +
+                ") VALUES (?, ?, ?, ?, ?::query_status, ?, ?, ?, ?, ?, ?, ?, ?::user_role, ?)",
             UUID.randomUUID(), tenantId, userId, question, status.name(), generatedSql, executedSql,
-            detail, rowCount, truncated, retryCount, model, role.name()
+            detail, rowCount, truncated, retryCount, model, role.name(), latencyMs
         );
     }
 }
