@@ -3,7 +3,7 @@ import AppShell from '../layouts/AppShell.vue'
 import { useAuthStore } from '../stores/auth'
 import AskView from '../views/AskView.vue'
 import AuditView from '../views/AuditView.vue'
-import ComingSoonView from '../views/ComingSoonView.vue'
+import DataView from '../views/DataView.vue'
 import LoginView from '../views/LoginView.vue'
 import TermsView from '../views/TermsView.vue'
 
@@ -24,15 +24,7 @@ export const router = createRouter({
       children: [
         { path: 'ask', name: 'ask', component: AskView },
         { path: 'terms', name: 'terms', component: TermsView },
-        {
-          path: 'data',
-          name: 'data',
-          component: ComingSoonView,
-          props: {
-            title: '데이터 연결',
-            description: '연결된 데이터베이스와 공개 범위를 관리하는 화면입니다. 아직 준비 중입니다.',
-          },
-        },
+        { path: 'data', name: 'data', component: DataView },
         { path: 'audit', name: 'audit', component: AuditView },
       ],
     },
