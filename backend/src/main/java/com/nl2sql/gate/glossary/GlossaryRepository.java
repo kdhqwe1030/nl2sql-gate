@@ -53,9 +53,12 @@ public class GlossaryRepository {
         return attachAliases(terms);
     }
 
-    public GlossaryTerm insert(UUID tenantId, UUID createdBy, GlossaryTermInput input) {
+    public GlossaryTerm insert(UUID tenantId, UUID createdBy, int callerRoleLevel, GlossaryTermInput input) {
         UUID id = UUID.randomUUID();
         int minRoleLevel = input.minRoleLevel() == null ? Role.STAFF.level() : input.minRoleLevel();
+        if (callerRoleLevel < minRoleLevel) {
+            throw new InsufficientGlossaryPermissionException(minRoleLevel);
+        }
         boolean enabled = input.enabled() == null || input.enabled();
         List<String> relatedTables = input.relatedTables() == null ? List.of() : input.relatedTables();
 
@@ -81,12 +84,18 @@ public class GlossaryRepository {
         return loadOne(tenantId, id);
     }
 
-    public GlossaryTerm update(UUID tenantId, UUID id, GlossaryTermInput input) {
-        int minRoleLevel = input.minRoleLevel() == null ? Role.STAFF.level() : input.minRoleLevel();
+    public GlossaryTerm update(UUID tenantId, UUID id, int callerRoleLevel, GlossaryTermInput input) {
+        int existingMinRoleLevel = currentMinRoleLevel(tenantId, id);
+        int newMinRoleLevel = input.minRoleLevel() == null ? Role.STAFF.level() : input.minRoleLevel();
+        int requiredLevel = Math.max(existingMinRoleLevel, newMinRoleLevel);
+        if (callerRoleLevel < requiredLevel) {
+            throw new InsufficientGlossaryPermissionException(requiredLevel);
+        }
+
         boolean enabled = input.enabled() == null || input.enabled();
         List<String> relatedTables = input.relatedTables() == null ? List.of() : input.relatedTables();
 
-        int updated = jdbcTemplate.update(con -> {
+        jdbcTemplate.update(con -> {
             PreparedStatement ps = con.prepareStatement(
                 "UPDATE glossary_term SET term = ?, definition = ?, sql_hint = ?, related_tables = ?, " +
                     "min_role_level = ?, enabled = ?, updated_at = now() WHERE id = ? AND tenant_id = ?"
@@ -95,41 +104,51 @@ public class GlossaryRepository {
             ps.setString(2, input.definition());
             ps.setString(3, input.sqlHint());
             ps.setArray(4, con.createArrayOf("text", relatedTables.toArray(new String[0])));
-            ps.setInt(5, minRoleLevel);
+            ps.setInt(5, newMinRoleLevel);
             ps.setBoolean(6, enabled);
             ps.setObject(7, id);
             ps.setObject(8, tenantId);
             return ps;
         });
 
-        if (updated == 0) {
-            throw new GlossaryTermNotFoundException(id);
-        }
         replaceAliases(id, input.aliases());
         return loadOne(tenantId, id);
     }
 
-    public void delete(UUID tenantId, UUID id) {
-        int deleted = jdbcTemplate.update("DELETE FROM glossary_term WHERE id = ? AND tenant_id = ?", id, tenantId);
-        if (deleted == 0) {
-            throw new GlossaryTermNotFoundException(id);
+    public void delete(UUID tenantId, UUID id, int callerRoleLevel) {
+        int existingMinRoleLevel = currentMinRoleLevel(tenantId, id);
+        if (callerRoleLevel < existingMinRoleLevel) {
+            throw new InsufficientGlossaryPermissionException(existingMinRoleLevel);
         }
+        jdbcTemplate.update("DELETE FROM glossary_term WHERE id = ? AND tenant_id = ?", id, tenantId);
     }
 
-    /** QueryOrchestrator가 프롬프트에 주입할 용도. min_role_level 이하만 보이게 걸러서 준다 (기획서 10.1 6번). */
-    public Map<String, String> promptTerms(UUID tenantId, int roleLevel) {
+    /**
+     * QueryOrchestrator가 프롬프트에 주입할 용도. role 필터링을 하지 않는다 — 용어의 "정의를 아는 것"은
+     * 민감하지 않고, 실제로 막아야 할 건 그 정의가 가리키는 실데이터(컬럼)뿐이다. 그건 DemoRolePolicy가
+     * 컬럼 목록에서 걸러주고, 모델이 그래도 그 컬럼을 쓰려고 하면 SqlGate가 FORBIDDEN으로 막아 DENIED로
+     * 떨어진다 — "권한 밖 데이터는 CLARIFY로 애매하게" 대신 "권한 없음"이라고 명확히 알려줄 수 있다.
+     */
+    public Map<String, String> promptTerms(UUID tenantId) {
         record Row(String term, String definition, String sqlHint) {
         }
         List<Row> rows = jdbcTemplate.query(
-            "SELECT term, definition, sql_hint FROM glossary_term " +
-                "WHERE tenant_id = ? AND enabled = true AND min_role_level <= ?",
+            "SELECT term, definition, sql_hint FROM glossary_term WHERE tenant_id = ? AND enabled = true",
             (rs, rowNum) -> new Row(rs.getString("term"), rs.getString("definition"), rs.getString("sql_hint")),
-            tenantId, roleLevel
+            tenantId
         );
         return rows.stream().collect(Collectors.toMap(
             Row::term,
             r -> r.sqlHint() == null || r.sqlHint().isBlank() ? r.definition() : r.definition() + " (계산: " + r.sqlHint() + ")"
         ));
+    }
+
+    private int currentMinRoleLevel(UUID tenantId, UUID id) {
+        List<Integer> rows = jdbcTemplate.query(
+            "SELECT min_role_level FROM glossary_term WHERE id = ? AND tenant_id = ?",
+            (rs, rowNum) -> rs.getInt("min_role_level"), id, tenantId
+        );
+        return rows.stream().findFirst().orElseThrow(() -> new GlossaryTermNotFoundException(id));
     }
 
     private GlossaryTerm loadOne(UUID tenantId, UUID id) {
