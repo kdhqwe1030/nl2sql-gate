@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
 import java.util.UUID;
 
 /**
@@ -46,13 +47,14 @@ public class AuditController {
     }
 
     @GetMapping("/stats")
-    @Operation(summary = "사용 현황 지표", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "사용 현황 지표 (월 단위)", security = @SecurityRequirement(name = "bearerAuth"))
     public StatsResponse stats(
         Authentication authentication,
-        @RequestParam(defaultValue = "month") String period
+        @RequestParam(required = false) String month
     ) {
         UUID tenantId = tenantIdOf(authentication);
-        return queryLogRepository.stats(tenantId, period);
+        YearMonth yearMonth = month == null || month.isBlank() ? null : YearMonth.parse(month);
+        return queryLogRepository.stats(tenantId, yearMonth);
     }
 
     private UUID tenantIdOf(Authentication authentication) {

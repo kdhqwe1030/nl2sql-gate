@@ -8,6 +8,8 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -90,11 +92,11 @@ public class QueryLogRepository {
         return new QueryLogPage(page, nextCursor);
     }
 
-    public StatsResponse stats(UUID tenantId, String period) {
-        String unit = switch (period) {
-            case "day", "week", "month" -> period;
-            default -> "month";
-        };
+    /** month를 안 주면(null) 이번 달. 특정 달(예: 2026-08)을 명시적으로 조회할 수 있다. */
+    public StatsResponse stats(UUID tenantId, YearMonth month) {
+        YearMonth target = month == null ? YearMonth.now() : month;
+        OffsetDateTime start = target.atDay(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime end = target.plusMonths(1).atDay(1).atStartOfDay().atOffset(ZoneOffset.UTC);
 
         record Row(long questionCount, long deniedCount, long clarifyCount, Integer avgLatencyMs) {
         }
@@ -103,15 +105,15 @@ public class QueryLogRepository {
             "SELECT COUNT(*) AS question_count, " +
                 "COUNT(*) FILTER (WHERE status = 'DENIED') AS denied_count, " +
                 "COUNT(*) FILTER (WHERE status = 'CLARIFY') AS clarify_count, " +
-                "ROUND(AVG(latency_ms)) FILTER (WHERE latency_ms IS NOT NULL) AS avg_latency_ms " +
-                "FROM query_log WHERE tenant_id = ? AND created_at >= date_trunc(?, now())",
+                "ROUND(AVG(latency_ms) FILTER (WHERE latency_ms IS NOT NULL)) AS avg_latency_ms " +
+                "FROM query_log WHERE tenant_id = ? AND created_at >= ? AND created_at < ?",
             (rs, rowNum) -> new Row(
                 rs.getLong("question_count"),
                 rs.getLong("denied_count"),
                 rs.getLong("clarify_count"),
                 (Integer) rs.getObject("avg_latency_ms")
             ),
-            tenantId, unit
+            tenantId, start, end
         );
 
         double clarifyRate = row.questionCount() == 0 ? 0.0 : (double) row.clarifyCount() / row.questionCount();
