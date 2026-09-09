@@ -214,11 +214,19 @@ input {
   color: var(--text-2);
 }
 .card-warning {
-  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning) 40%,
+    var(--color-border)
+  );
   background: color-mix(in srgb, var(--color-warning) 6%, white);
 }
 .card-danger {
-  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+  border-color: color-mix(
+    in srgb,
+    var(--color-danger) 40%,
+    var(--color-border)
+  );
   background: color-mix(in srgb, var(--color-danger) 6%, white);
 }
 
