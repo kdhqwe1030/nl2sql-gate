@@ -19,10 +19,13 @@ export const useAskStore = defineStore('ask', {
   actions: {
     async ask(question: string) {
       const id = `q${++seq}`
-      const entry: HistoryEntry = { id, question, loading: true, open: true, answer: null }
       this.history.forEach((e) => (e.open = false))
-      this.history.push(entry)
+      this.history.push({ id, question, loading: true, open: true, answer: null })
       this.currentId = id
+
+      // push한 원본 객체가 아니라 배열 안의 reactive proxy를 다시 꺼내 써야 한다 —
+      // 원본을 계속 들고 mutate하면 값은 바뀌어도 Vue가 감지를 못 해 화면이 안 바뀐다.
+      const entry = this.history[this.history.length - 1]
 
       try {
         if (META_PATTERN.test(question.replace(/\s/g, ''))) {
