@@ -3,6 +3,7 @@ import { getTenant } from '../api/tenant'
 import { http } from '../api/http'
 import { clearToken, getToken, setToken } from '../lib/tokenStorage'
 import type { AuthResponse, LoginRequest, TenantResponse, UserResponse } from '../types/auth'
+import { useAskStore } from './ask'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -17,6 +18,8 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async login(payload: LoginRequest) {
+      // 계정을 바꿔가며 로그인할 때 이전 사용자의 질문 기록이 안 섞이도록 먼저 비운다.
+      useAskStore().$reset()
       const res = await http.post<AuthResponse>('/api/auth/login', payload)
       this.token = res.accessToken
       setToken(res.accessToken)
@@ -48,6 +51,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.tenant = null
       clearToken()
+      useAskStore().$reset()
     },
   },
 })
