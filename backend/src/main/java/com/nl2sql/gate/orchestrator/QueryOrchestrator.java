@@ -53,7 +53,7 @@ public class QueryOrchestrator {
         Set<String> allowedColumns = DemoRolePolicy.allowedColumns(role);
 
         SqlDraft draft = sqlGenerator.generate(
-            question, allowedTables, allowedColumns, DemoGlossary.TERMS, DemoSchemaRelationships.RELATIONSHIPS
+            question, allowedTables, allowedColumns, DemoGlossary.TERMS, DemoSchemaRelationships.FOREIGN_KEYS
         );
         draft = withClarifyFallback(draft);
 
@@ -80,7 +80,7 @@ public class QueryOrchestrator {
             attempt++;
             draft = sqlGenerator.regenerate(
                 question, allowedTables, allowedColumns, DemoGlossary.TERMS,
-                DemoSchemaRelationships.RELATIONSHIPS, gateResult.detail()
+                DemoSchemaRelationships.FOREIGN_KEYS, gateResult.detail()
             );
             draft = withClarifyFallback(draft);
             if (draft.needsClarification()) {
