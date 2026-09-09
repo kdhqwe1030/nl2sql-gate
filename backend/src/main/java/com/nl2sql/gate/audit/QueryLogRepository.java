@@ -107,12 +107,18 @@ public class QueryLogRepository {
                 "COUNT(*) FILTER (WHERE status = 'CLARIFY') AS clarify_count, " +
                 "ROUND(AVG(latency_ms) FILTER (WHERE latency_ms IS NOT NULL)) AS avg_latency_ms " +
                 "FROM query_log WHERE tenant_id = ? AND created_at >= ? AND created_at < ?",
-            (rs, rowNum) -> new Row(
-                rs.getLong("question_count"),
-                rs.getLong("denied_count"),
-                rs.getLong("clarify_count"),
-                (Integer) rs.getObject("avg_latency_ms")
-            ),
+            (rs, rowNum) -> {
+                // ROUND(AVG(...))는 Postgres numeric으로 돌아와 드라이버가 BigDecimal로 매핑한다.
+                // (Integer) rs.getObject(...)로 바로 캐스팅하면 ClassCastException이 난다 —
+                // getInt + wasNull()은 드라이버의 실제 반환 타입과 무관하게 항상 안전하다.
+                int avgLatency = rs.getInt("avg_latency_ms");
+                return new Row(
+                    rs.getLong("question_count"),
+                    rs.getLong("denied_count"),
+                    rs.getLong("clarify_count"),
+                    rs.wasNull() ? null : avgLatency
+                );
+            },
             tenantId, start, end
         );
 
