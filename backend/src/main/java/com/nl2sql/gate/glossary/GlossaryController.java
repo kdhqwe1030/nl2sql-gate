@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 업무 용어 CRUD. 이번 라운드엔 role별 접근 제한 없이 로그인만 하면 전부 가능하다
- * (의도적 — 사용현황과 같은 결정, 나중에 좁힐 예정).
+ * 업무 용어 CRUD. 조회(GET)는 role 무관하게 전부 열려 있다 — 용어의 정의를 아는 것 자체는
+ * 민감하지 않다. 등록/수정/삭제는 그 용어의 min_role_level 이상인 사람만 할 수 있다.
  */
 @RestController
 @RequestMapping("/api/admin/glossary")
@@ -36,42 +36,47 @@ public class GlossaryController {
     }
 
     @GetMapping
-    @Operation(summary = "용어 목록", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "용어 목록 (role 무관 전체 공개)", security = @SecurityRequirement(name = "bearerAuth"))
     public List<GlossaryTerm> list(Authentication authentication) {
         return glossaryRepository.findAll(tenantIdOf(authentication));
     }
 
     @PostMapping
-    @Operation(summary = "용어 등록", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "용어 등록 (등록하려는 등급 이상만 가능)", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<GlossaryTerm> create(
         Authentication authentication,
         @Valid @RequestBody GlossaryTermInput input
     ) {
         UUID tenantId = tenantIdOf(authentication);
         UUID userId = UUID.fromString(authentication.getName());
-        GlossaryTerm created = glossaryRepository.insert(tenantId, userId, input);
+        GlossaryTerm created = glossaryRepository.insert(tenantId, userId, roleLevelOf(authentication), input);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PatchMapping("/{termId}")
-    @Operation(summary = "용어 수정", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "용어 수정 (해당 용어 등급 이상만 가능)", security = @SecurityRequirement(name = "bearerAuth"))
     public GlossaryTerm update(
         Authentication authentication,
         @PathVariable UUID termId,
         @Valid @RequestBody GlossaryTermInput input
     ) {
-        return glossaryRepository.update(tenantIdOf(authentication), termId, input);
+        return glossaryRepository.update(tenantIdOf(authentication), termId, roleLevelOf(authentication), input);
     }
 
     @DeleteMapping("/{termId}")
-    @Operation(summary = "용어 삭제", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "용어 삭제 (해당 용어 등급 이상만 가능)", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> delete(Authentication authentication, @PathVariable UUID termId) {
-        glossaryRepository.delete(tenantIdOf(authentication), termId);
+        glossaryRepository.delete(tenantIdOf(authentication), termId, roleLevelOf(authentication));
         return ResponseEntity.noContent().build();
     }
 
     private UUID tenantIdOf(Authentication authentication) {
         Claims claims = (Claims) authentication.getDetails();
         return UUID.fromString(claims.get("tenantId", String.class));
+    }
+
+    private int roleLevelOf(Authentication authentication) {
+        Claims claims = (Claims) authentication.getDetails();
+        return claims.get("roleLevel", Integer.class);
     }
 }

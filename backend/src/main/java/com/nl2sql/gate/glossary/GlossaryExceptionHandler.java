@@ -20,4 +20,9 @@ public class GlossaryExceptionHandler {
     public ResponseEntity<Map<String, String>> handleDuplicate(DuplicateKeyException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "이미 등록된 용어입니다"));
     }
+
+    @ExceptionHandler(InsufficientGlossaryPermissionException.class)
+    public ResponseEntity<Map<String, String>> handleInsufficientPermission(InsufficientGlossaryPermissionException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", ex.getMessage()));
+    }
 }

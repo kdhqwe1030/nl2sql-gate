@@ -1,28 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { ApiError } from '../api/http'
-import { useAuthStore } from '../stores/auth'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { ApiError } from "../api/http";
+import { useAuthStore } from "../stores/auth";
 
-const email = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const loading = ref(false)
+const email = ref("");
+const password = ref("");
+const errorMessage = ref("");
+const loading = ref(false);
 
-const auth = useAuthStore()
-const router = useRouter()
+const auth = useAuthStore();
+const router = useRouter();
 
 async function handleSubmit() {
-  if (!email.value || !password.value) return
-  errorMessage.value = ''
-  loading.value = true
+  if (!email.value || !password.value) return;
+  errorMessage.value = "";
+  loading.value = true;
   try {
-    await auth.login({ email: email.value, password: password.value })
-    router.push({ name: 'ask' })
+    await auth.login({ email: email.value, password: password.value });
+    router.push({ name: "ask" });
   } catch (e) {
-    errorMessage.value = e instanceof ApiError ? e.message : '로그인에 실패했습니다.'
+    errorMessage.value =
+      e instanceof ApiError ? e.message : "로그인에 실패했습니다.";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -50,7 +51,7 @@ async function handleSubmit() {
         />
         <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
         <button class="btn btn-primary" type="submit" :disabled="loading">
-          {{ loading ? '로그인 중...' : '로그인' }}
+          {{ loading ? "로그인 중..." : "로그인" }}
         </button>
       </form>
     </div>
@@ -71,14 +72,14 @@ async function handleSubmit() {
   max-width: 352px;
 }
 .login-mark {
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: 800;
+  font-size: 36px;
   color: var(--color-main);
   letter-spacing: -0.01em;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 .login-card h1 {
-  font-size: 23px;
+  font-size: 18px;
   letter-spacing: -0.02em;
   margin: 0 0 6px;
 }

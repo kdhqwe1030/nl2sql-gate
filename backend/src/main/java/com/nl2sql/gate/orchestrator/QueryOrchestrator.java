@@ -57,7 +57,7 @@ public class QueryOrchestrator {
         long startNanos = System.nanoTime();
         Set<String> allowedTables = DemoRolePolicy.allowedTables(role);
         Set<String> allowedColumns = DemoRolePolicy.allowedColumns(role);
-        Map<String, String> glossary = glossaryRepository.promptTerms(tenantId, role.level());
+        Map<String, String> glossary = glossaryRepository.promptTerms(tenantId);
 
         SqlDraft draft = sqlGenerator.generate(
             question, allowedTables, allowedColumns, glossary, DemoSchemaRelationships.FOREIGN_KEYS
