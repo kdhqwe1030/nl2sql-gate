@@ -5,6 +5,7 @@ import AskView from '../views/AskView.vue'
 import AuditView from '../views/AuditView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
 import LoginView from '../views/LoginView.vue'
+import TermsView from '../views/TermsView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -22,15 +23,7 @@ export const router = createRouter({
       redirect: { name: 'ask' },
       children: [
         { path: 'ask', name: 'ask', component: AskView },
-        {
-          path: 'terms',
-          name: 'terms',
-          component: ComingSoonView,
-          props: {
-            title: '업무 용어',
-            description: '회사 용어를 등록·관리하는 화면입니다. 아직 준비 중입니다.',
-          },
-        },
+        { path: 'terms', name: 'terms', component: TermsView },
         {
           path: 'data',
           name: 'data',
