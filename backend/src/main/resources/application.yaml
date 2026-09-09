@@ -1,15 +1,21 @@
 spring:
   application:
     name: gate
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
-#  datasource:
-#    url: jdbc:postgresql://localhost:5432/nl2sql
-#    username: app
-#    password: app
-#    driver-class-name: org.postgresql.Driver
 
+  datasource:
+    url: jdbc:postgresql://localhost:5444/nl2sql
+    username: app
+    password: app
+    driver-class-name: org.postgresql.Driver
+
+  # 터미널에 sql보여주기 및 정렬 용도
+  jpa:
+    hibernate:
+      ddl-auto: none #JPA가 테이블을 건드리지 않음
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
@@ -17,6 +23,17 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.0
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  expiration-ms: 3600000
+
+execution:
+  datasource-url: jdbc:postgresql://localhost:5444/nl2sql
+  datasource-username: llm_reader
+  datasource-password: ${LLM_READER_DB_PASSWORD}
+  query-timeout-seconds: 10
+  max-rows: 5000
 
 server:
   port: 8080
