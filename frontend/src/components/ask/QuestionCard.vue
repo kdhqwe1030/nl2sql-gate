@@ -39,7 +39,10 @@ function toggle() {
 }
 
 function formatCell(value: unknown) {
-  return typeof value === 'number' ? value.toLocaleString() : String(value ?? '')
+  // SUM() 등 집계 함수는 매칭되는 행이 없으면 값이 아니라 SQL NULL을 돌려준다.
+  // '' 로 렌더하면 "값이 없음"과 "화면이 깨짐"을 구분할 수 없어 '-'로 명시한다.
+  if (value === null || value === undefined) return '-'
+  return typeof value === 'number' ? value.toLocaleString() : String(value)
 }
 </script>
 
