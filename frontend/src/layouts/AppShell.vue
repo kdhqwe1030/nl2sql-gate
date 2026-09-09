@@ -1,31 +1,40 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { RouterLink, RouterView, useRouter } from "vue-router";
+import { useAuthStore } from "../stores/auth";
 
-const auth = useAuthStore()
-const router = useRouter()
+const auth = useAuthStore();
+const router = useRouter();
 
 function handleLogout() {
-  auth.logout()
-  router.push({ name: 'login' })
+  auth.logout();
+  router.push({ name: "login" });
 }
 </script>
 
 <template>
   <div class="shell-root">
     <header class="topbar">
-      <span class="mark">nl2sql-gate</span>
+      <div class="brand">
+        <span class="tenant-name">{{ auth.tenant?.name }}</span>
+      </div>
       <div class="top-right">
-        <span v-if="auth.user" class="role-badge">{{ auth.user.role }}</span>
         <span v-if="auth.user" class="uname">{{ auth.user.name }}</span>
-        <button class="btn" @click="handleLogout">로그아웃</button>
+        <span v-if="auth.user" class="role-badge">{{ auth.user.role }}</span>
+        <button class="btn logout-btn" @click="handleLogout">로그아웃</button>
       </div>
     </header>
 
     <div class="body">
       <nav class="rail">
         <RouterLink to="/ask" class="rail-btn" active-class="on">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+          >
             <path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" />
           </svg>
           <span>질문하기</span>
@@ -34,7 +43,14 @@ function handleLogout() {
         <p class="grp">관리</p>
 
         <RouterLink to="/terms" class="rail-btn" active-class="on">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+          >
             <path d="M3 2.5h10v11H3z" />
             <path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3" />
           </svg>
@@ -42,7 +58,14 @@ function handleLogout() {
         </RouterLink>
 
         <RouterLink to="/data" class="rail-btn" active-class="on">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+          >
             <ellipse cx="8" cy="4" rx="5" ry="2" />
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4" />
             <path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2" />
@@ -51,7 +74,14 @@ function handleLogout() {
         </RouterLink>
 
         <RouterLink to="/audit" class="rail-btn" active-class="on">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+          >
             <path d="M2.5 13.5v-5M6.5 13.5v-9M10.5 13.5v-6M14 13.5v-3" />
           </svg>
           <span>사용 현황</span>
@@ -82,10 +112,21 @@ function handleLogout() {
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
-.mark {
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.tenant-name {
   font-weight: 700;
-  font-size: 14px;
-  color: var(--color-main);
+  font-size: 17px;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+.mark {
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text-3);
   letter-spacing: -0.01em;
 }
 .top-right {
@@ -105,6 +146,9 @@ function handleLogout() {
 .uname {
   font-size: 13px;
   color: var(--text-2);
+}
+.logout-btn {
+  padding: 6px 12px;
 }
 
 .body {

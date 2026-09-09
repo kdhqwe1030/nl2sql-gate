@@ -21,3 +21,7 @@ export interface UserResponse {
   role: Role
   roleLevel: number
 }
+
+export interface TenantResponse {
+  name: string
+}
