@@ -2,6 +2,7 @@ package com.nl2sql.gate.orchestrator;
 
 import com.nl2sql.gate.execution.QueryExecutor;
 import com.nl2sql.gate.execution.QueryResult;
+import com.nl2sql.gate.glossary.GlossaryRepository;
 import com.nl2sql.gate.llm.SqlDraft;
 import com.nl2sql.gate.llm.SqlGenerator;
 import com.nl2sql.gate.user.Role;
@@ -14,6 +15,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,6 +33,7 @@ public class QueryOrchestrator {
     private final SqlGenerator sqlGenerator;
     private final SqlGate sqlGate;
     private final QueryExecutor queryExecutor;
+    private final GlossaryRepository glossaryRepository;
     private final JdbcTemplate jdbcTemplate;
     private final String model;
 
@@ -38,12 +41,14 @@ public class QueryOrchestrator {
         SqlGenerator sqlGenerator,
         SqlGate sqlGate,
         QueryExecutor queryExecutor,
+        GlossaryRepository glossaryRepository,
         @Qualifier("jdbcTemplate") JdbcTemplate jdbcTemplate,
         @Value("${spring.ai.openai.chat.options.model}") String model
     ) {
         this.sqlGenerator = sqlGenerator;
         this.sqlGate = sqlGate;
         this.queryExecutor = queryExecutor;
+        this.glossaryRepository = glossaryRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.model = model;
     }
@@ -52,9 +57,10 @@ public class QueryOrchestrator {
         long startNanos = System.nanoTime();
         Set<String> allowedTables = DemoRolePolicy.allowedTables(role);
         Set<String> allowedColumns = DemoRolePolicy.allowedColumns(role);
+        Map<String, String> glossary = glossaryRepository.promptTerms(tenantId, role.level());
 
         SqlDraft draft = sqlGenerator.generate(
-            question, allowedTables, allowedColumns, DemoGlossary.TERMS, DemoSchemaRelationships.FOREIGN_KEYS
+            question, allowedTables, allowedColumns, glossary, DemoSchemaRelationships.FOREIGN_KEYS
         );
         draft = withClarifyFallback(draft);
 
@@ -80,7 +86,7 @@ public class QueryOrchestrator {
 
             attempt++;
             draft = sqlGenerator.regenerate(
-                question, allowedTables, allowedColumns, DemoGlossary.TERMS,
+                question, allowedTables, allowedColumns, glossary,
                 DemoSchemaRelationships.FOREIGN_KEYS, gateResult.detail()
             );
             draft = withClarifyFallback(draft);
