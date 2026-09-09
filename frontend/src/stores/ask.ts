@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { getQueryLogs } from '../api/audit'
 import { ApiError } from '../api/http'
 import { getSchema, postQuery } from '../api/query'
 import type { HistoryEntry } from '../types/query'
@@ -14,9 +15,49 @@ export const useAskStore = defineStore('ask', {
   state: () => ({
     history: [] as HistoryEntry[],
     currentId: null as string | null,
+    historyLoaded: false,
   }),
 
   actions: {
+    // 오늘 내가 던진 질문을 query_log에서 불러와 히스토리 rail에 미리 채운다.
+    // params가 저장 안 돼 있어서 재실행은 못 하고, 질문/상태/executedSql만 보여주는 "가벼운 버전".
+    async loadHistory() {
+      if (this.historyLoaded) return
+      this.historyLoaded = true
+
+      const auth = useAuthStore()
+      if (!auth.user) return
+
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0)
+
+      try {
+        const page = await getQueryLogs({
+          userId: auth.user.id,
+          from: startOfToday.toISOString(),
+          limit: 100,
+        })
+        const loaded: HistoryEntry[] = page.items
+          .slice()
+          .reverse() // API는 최신순 → 오래된 순으로 뒤집어서 앞쪽에 쌓는다
+          .map((log) => ({
+            id: log.id,
+            question: log.question,
+            loading: false,
+            open: false,
+            answer: {
+              type: 'LOGGED',
+              status: log.status,
+              executedSql: log.executedSql,
+              rowCount: log.rowCount,
+            },
+          }))
+        this.history = [...loaded, ...this.history]
+      } catch {
+        // 히스토리를 못 불러와도 질문하기 자체는 정상 동작해야 하니 조용히 무시한다.
+      }
+    },
+
     async ask(question: string) {
       const id = `q${++seq}`
       this.history.forEach((e) => (e.open = false))

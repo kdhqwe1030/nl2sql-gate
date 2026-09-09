@@ -6,6 +6,7 @@ export function getStats(month: string): Promise<StatsResponse> {
 }
 
 export interface QueryLogFilter {
+  userId?: string
   from?: string
   to?: string
   limit?: number
@@ -14,6 +15,7 @@ export interface QueryLogFilter {
 
 export function getQueryLogs(filter: QueryLogFilter = {}): Promise<QueryLogPage> {
   const params = new URLSearchParams()
+  if (filter.userId) params.set('userId', filter.userId)
   if (filter.from) params.set('from', filter.from)
   if (filter.to) params.set('to', filter.to)
   if (filter.limit) params.set('limit', String(filter.limit))

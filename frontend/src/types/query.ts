@@ -1,3 +1,5 @@
+import type { LogStatus } from './audit'
+
 // 백엔드 com.nl2sql.gate.orchestrator / com.nl2sql.gate.execution 과 1:1 대응.
 export interface QueryResult {
   columns: string[]
@@ -42,7 +44,16 @@ export interface MetaAnswer {
   tables: SchemaTable[]
 }
 
-export type AskAnswer = QueryApiResponse | MetaAnswer
+// GET /api/admin/query-logs로 불러온 지난 기록 — 행 데이터는 없고 메타정보만 있다
+// (query_log 테이블에 params가 저장 안 돼서 재실행이 불가능하다. "가벼운 버전").
+export interface LoggedAnswer {
+  type: 'LOGGED'
+  status: LogStatus
+  executedSql: string | null
+  rowCount: number | null
+}
+
+export type AskAnswer = QueryApiResponse | MetaAnswer | LoggedAnswer
 
 export interface HistoryEntry {
   id: string

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { LOG_STATUS_LABEL } from '../../lib/logStatus'
 import { useAskStore } from '../../stores/ask'
 import type { HistoryEntry } from '../../types/query'
 
@@ -24,6 +25,9 @@ const metaAnswer = computed(() => (props.entry.answer?.type === 'META' ? props.e
 const errorAnswer = computed(() =>
   props.entry.answer?.type === 'ERROR' ? props.entry.answer : null,
 )
+const loggedAnswer = computed(() =>
+  props.entry.answer?.type === 'LOGGED' ? props.entry.answer : null,
+)
 
 const summary = computed(() => {
   if (props.entry.loading || !props.entry.answer) return { text: '처리 중', tone: '' }
@@ -31,6 +35,11 @@ const summary = computed(() => {
   if (clarifyAnswer.value) return { text: '확인 필요', tone: 'warning' }
   if (metaAnswer.value) return { text: '데이터 목록', tone: '' }
   if (errorAnswer.value) return { text: STATUS_LABEL[errorAnswer.value.status], tone: 'danger' }
+  if (loggedAnswer.value) {
+    const { label, chip } = LOG_STATUS_LABEL[loggedAnswer.value.status]
+    const tone = chip === 'chip-success' ? 'success' : chip === 'chip-warning' ? 'warning' : 'danger'
+    return { text: label, tone }
+  }
   return { text: '—', tone: '' }
 })
 
@@ -47,7 +56,7 @@ function formatCell(value: unknown) {
 </script>
 
 <template>
-  <article class="qcard" :class="{ open: entry.open }">
+  <article :id="`c-${entry.id}`" class="qcard" :class="{ open: entry.open }">
     <button class="qhead" :aria-expanded="entry.open" @click="toggle">
       <h3>{{ entry.question }}</h3>
       <span class="qsum" :class="summary.tone">{{ summary.text }}</span>
@@ -129,6 +138,23 @@ function formatCell(value: unknown) {
             <h4>{{ STATUS_LABEL[errorAnswer.status] }}</h4>
             <p>{{ errorAnswer.message }}</p>
           </div>
+        </template>
+
+        <template v-else-if="loggedAnswer">
+          <div class="chips">
+            <span class="chip" :class="LOG_STATUS_LABEL[loggedAnswer.status].chip">
+              <span class="dot" />{{ LOG_STATUS_LABEL[loggedAnswer.status].label }}
+            </span>
+            <span class="chip chip-muted">오늘 지난 기록</span>
+          </div>
+          <p v-if="loggedAnswer.rowCount !== null" class="count">{{ loggedAnswer.rowCount }}건</p>
+          <details v-if="loggedAnswer.executedSql" class="sql">
+            <summary>그때 실행된 조회 내용 보기</summary>
+            <pre>{{ loggedAnswer.executedSql }}</pre>
+          </details>
+          <p class="note">
+            지난 기록은 표를 다시 불러오지 않습니다. 같은 질문을 다시 물어보면 최신 데이터로 새로 조회합니다.
+          </p>
         </template>
       </template>
     </div>
