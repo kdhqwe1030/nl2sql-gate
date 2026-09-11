@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { getTenant } from '../api/tenant'
 import { http } from '../api/http'
 import { clearToken, getToken, setToken } from '../lib/tokenStorage'
-import type { AuthResponse, LoginRequest, TenantResponse, UserResponse } from '../types/auth'
+import type { AuthResponse, LoginRequest, SignupRequest, TenantResponse, UserResponse } from '../types/auth'
 import { useAskStore } from './ask'
 
 export const useAuthStore = defineStore('auth', {
@@ -21,6 +21,16 @@ export const useAuthStore = defineStore('auth', {
       // 계정을 바꿔가며 로그인할 때 이전 사용자의 질문 기록이 안 섞이도록 먼저 비운다.
       useAskStore().$reset()
       const res = await http.post<AuthResponse>('/api/auth/login', payload)
+      this.token = res.accessToken
+      setToken(res.accessToken)
+      await this.loadProfile()
+    },
+
+    // 가입과 동시에 로그인까지 — 백엔드가 회원가입 응답으로 AuthResponse(토큰 포함)를 바로 준다.
+    // role은 안 보내면 서버 기본값(STAFF)으로 가입된다.
+    async signup(payload: SignupRequest) {
+      useAskStore().$reset()
+      const res = await http.post<AuthResponse>('/api/auth/signup', payload)
       this.token = res.accessToken
       setToken(res.accessToken)
       await this.loadProfile()

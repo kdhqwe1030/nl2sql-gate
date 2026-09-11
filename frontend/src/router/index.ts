@@ -5,6 +5,7 @@ import AskView from '../views/AskView.vue'
 import AuditView from '../views/AuditView.vue'
 import DataView from '../views/DataView.vue'
 import LoginView from '../views/LoginView.vue'
+import SignupView from '../views/SignupView.vue'
 import TermsView from '../views/TermsView.vue'
 import UsersView from '../views/UsersView.vue'
 
@@ -19,6 +20,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
+    { path: '/signup', name: 'signup', component: SignupView, meta: { public: true } },
     {
       path: '/',
       component: AppShell,
@@ -40,7 +42,7 @@ router.beforeEach((to) => {
   if (!to.meta.public && !auth.isAuthenticated) {
     return { name: 'login' }
   }
-  if (to.name === 'login' && auth.isAuthenticated) {
+  if ((to.name === 'login' || to.name === 'signup') && auth.isAuthenticated) {
     return { name: 'ask' }
   }
   if (to.meta.minRoleLevel !== undefined && (auth.user?.roleLevel ?? 0) < to.meta.minRoleLevel) {

@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { ApiError } from "../api/http";
 import { useAuthStore } from "../stores/auth";
 
+const name = ref("");
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
@@ -13,15 +14,19 @@ const auth = useAuthStore();
 const router = useRouter();
 
 async function handleSubmit() {
-  if (!email.value || !password.value) return;
+  if (!name.value || !email.value || !password.value) return;
+  if (password.value.length < 8) {
+    errorMessage.value = "비밀번호는 8자 이상이어야 합니다.";
+    return;
+  }
   errorMessage.value = "";
   loading.value = true;
   try {
-    await auth.login({ email: email.value, password: password.value });
+    await auth.signup({ name: name.value, email: email.value, password: password.value });
     router.push({ name: "ask" });
   } catch (e) {
     errorMessage.value =
-      e instanceof ApiError ? e.message : "로그인에 실패했습니다.";
+      e instanceof ApiError ? e.message : "회원가입에 실패했습니다.";
   } finally {
     loading.value = false;
   }
@@ -32,9 +37,16 @@ async function handleSubmit() {
   <div class="login-page">
     <div class="login-card">
       <div class="login-mark">nl2sql-gate</div>
-      <h1>사내 데이터 조회</h1>
-      <p class="sub">이메일과 비밀번호로 로그인하세요.</p>
+      <h1>회원가입</h1>
+      <p class="sub">이름, 이메일, 비밀번호를 입력하세요.</p>
       <form @submit.prevent="handleSubmit">
+        <input
+          v-model="name"
+          class="field"
+          type="text"
+          placeholder="이름"
+          autocomplete="name"
+        />
         <input
           v-model="email"
           class="field"
@@ -46,17 +58,17 @@ async function handleSubmit() {
           v-model="password"
           class="field"
           type="password"
-          placeholder="비밀번호"
-          autocomplete="current-password"
+          placeholder="비밀번호 (8자 이상)"
+          autocomplete="new-password"
         />
         <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
         <button class="btn btn-primary" type="submit" :disabled="loading">
-          {{ loading ? "로그인 중..." : "로그인" }}
+          {{ loading ? "가입 중..." : "가입하기" }}
         </button>
       </form>
       <p class="switch">
-        계정이 없으신가요?
-        <RouterLink :to="{ name: 'signup' }">회원가입</RouterLink>
+        이미 계정이 있으신가요?
+        <RouterLink :to="{ name: 'login' }">로그인</RouterLink>
       </p>
     </div>
   </div>
